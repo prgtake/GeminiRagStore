@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2026 [Datan]
+# -*- coding: utf-8 -*-
 import tkinter as tk
 from tkinter import filedialog, scrolledtext, simpledialog, messagebox, ttk
 import tkinter.simpledialog as sd
@@ -13,7 +16,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # =====================================================
-#  アプリのバージョン定義 (app_tkinter.py と共通化)
+#  アプリのバージョン定義 
 # =====================================================
 APP_VERSION = "1.0.0"
 
