@@ -1,21 +1,25 @@
-MIT License
 
 Copyright (c) 2026 datan
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This project is released to support individual developers and learners. However, licensing terms vary depending on the type of usage:
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+1. Individual / Non-commercial Use (Student/Individual)
+Cost: Free
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Students, medical students, and individuals preparing for certification exams are welcome to use this tool freely.
+
+A report saying "I passed thanks to this tool!" is the greatest reward for the author.
+
+2. Commercial / Corporate Use (Commercial/Corporate)
+A separate "Paid License Agreement" is required for use by cram schools, preparatory schools, educational institutions, or for integrating this code into any commercial service.
+
+We also offer enterprise-level customization, OEM provision, and technical consulting.
+
+Unauthorized commercial use is strictly prohibited.
+
+3. Disclaimer (Disclaimer)
+This software is provided "As-Is."
+
+Due to the nature of "Vibe Coding," functionality was prioritized over code aesthetics.
+
+The author shall not be held liable for any damages resulting from the use of this software (including API costs, exam outcomes, etc.).
