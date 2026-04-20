@@ -1,21 +1,80 @@
+# MIT License
+# 
+# Copyright (c) 2026 Datan (データン)
+# 
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# 
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+# 
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 import tkinter as tk
 from tkinter import filedialog, scrolledtext, messagebox, ttk, simpledialog
 from google import genai
 from google.genai import types
 import os
 import time
+import json
 from dotenv import load_dotenv
 
 # .envファイルから環境変数を読み込む
 load_dotenv()
 
+# 実行ファイルのディレクトリを取得して絶対パスを作成
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CONFIG_FILE = os.path.join(BASE_DIR, "app_config.json")
+
 class GeminiClientManager:
     def __init__(self):
+        self.config = self._load_config()
+        # 保存されたモデル名があれば使用、なければデフォルト
+        self.current_model = self.config.get("model", "gemini-3.1-flash-lite-preview")
+        
+        # 初回起動時（ファイルがない場合）にデフォルト設定でファイルを作成しておく
+        if not os.path.exists(CONFIG_FILE):
+            self._save_config()
+
         try:
             self.client = genai.Client()
         except Exception as e:
             messagebox.showerror("APIエラー", f"Gemini 初期化エラー: {e}")
             self.client = None
+
+    def _load_config(self):
+        """設定ファイルから情報を読み込む"""
+        if os.path.exists(CONFIG_FILE):
+            try:
+                with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+                    return json.load(f)
+            except:
+                return {}
+        return {}
+
+    def _save_config(self):
+        """現在の設定をファイルに保存する"""
+        self.config["model"] = self.current_model
+        try:
+            with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+                json.dump(self.config, f, indent=4, ensure_ascii=False)
+        except Exception as e:
+            print(f"設定の保存に失敗しました: {e}")
+
+    def set_model(self, model_name):
+        """使用モデルを変更し保存する"""
+        self.current_model = model_name
+        self._save_config()
 
     def list_stores(self):
         """ストア一覧を取得"""
@@ -87,7 +146,7 @@ class GeminiClientManager:
                 tools=[types.Tool(file_search=types.FileSearch(file_search_store_names=[store_name]))]
             )
             response = self.client.models.generate_content(
-                model="gemini-3.1-flash-lite-preview",  # 最新の軽量モデルを使用
+                model=self.current_model,
                 contents=query,
                 config=tool_config,
             )
@@ -100,7 +159,7 @@ class GeminiClientManager:
 class MainApp(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("AiTu 2.0 - Gemini RAG 統合管理パネル")
+        self.title("Gemini File Search Store 管理パネル")
         self.geometry("1100x750")
 
         self.client_manager = GeminiClientManager()
@@ -126,16 +185,36 @@ class MainApp(tk.Tk):
         # APIキーの伏せ字処理
         api_key = os.environ.get("GEMINI_API_KEY", "N/A")
         masked_key = f"{api_key[:4]}...{api_key[-4:]}" if len(api_key) > 10 else api_key
-        model_name = "gemini-3.1-flash-lite-preview" # query_storeで使用するモデルを表示
 
-        info_label = tk.Label(
+        tk.Label(
             info_frame, 
-            text=f"🔑 API Key: {masked_key} | 🤖 Model: {model_name}",
+            text=f"🔑 API Key: {masked_key}",
             font=('Arial', 9),
             bg="#f0f0f0",
             fg="#555555"
-        )
-        info_label.pack(side='left', padx=10)
+        ).pack(side='left', padx=10)
+
+        # モデル名入力用テキストボックス
+        tk.Label(
+            info_frame, 
+            text="🤖 Model:",
+            font=('Arial', 9),
+            bg="#f0f0f0",
+            fg="#555555"
+        ).pack(side='left', padx=(20, 5))
+
+        self.model_var = tk.StringVar(value=self.client_manager.current_model)
+        self.model_entry = tk.Entry(info_frame, textvariable=self.model_var, width=35)
+        self.model_entry.pack(side='left', padx=5)
+        self.model_entry.bind('<Return>', lambda e: self.update_model_from_ui())
+
+        tk.Button(
+            info_frame, 
+            text="適用", 
+            command=self.update_model_from_ui,
+            font=('Arial', 8),
+            padx=5
+        ).pack(side='left', padx=2)
 
         # 1. 上部コントロール
         control_frame = tk.Frame(self)
@@ -186,6 +265,15 @@ class MainApp(tk.Tk):
         # 4. ログ
         self.log_area = scrolledtext.ScrolledText(self, wrap=tk.WORD, height=8, state=tk.DISABLED)
         self.log_area.pack(fill="x", padx=10, pady=10)
+
+    def update_model_from_ui(self):
+        """テキストボックスからモデル名を取得して更新"""
+        new_model = self.model_var.get().strip()
+        if new_model:
+            self.client_manager.set_model(new_model)
+            self.log_message(f"✅ 使用モデルを '{new_model}' に更新・保存しました。")
+        else:
+            messagebox.showwarning("警告", "モデル名を入力してください。")
 
     def refresh_store_list(self):
         self.store_listbox.delete(*self.store_listbox.get_children())
