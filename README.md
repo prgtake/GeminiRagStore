@@ -8,7 +8,7 @@ Gemini File Search Store 管理パネル (AiTu 2.0)
 
 概要
 
-Gemini File Search Store 管理パネル (AiTu 2.0) は、Googleの新しい Gemini API (google-genai) を利用して、File Search Store（RAG: 検索拡張生成用のデータストア）を直感的に管理・操作できるGUIアプリケーションです。
+Gemini File Search Store 管理パネルは、Googleの新しい Gemini API (google-genai) を利用して、File Search Store（RAG: 検索拡張生成用のデータストア）を直感的に管理・操作できるGUIアプリケーションです。
 
 PDFファイルのアップロードやインデックス作成から、Geminiモデル（デフォルト: gemini-3.1-flash-lite-preview）を用いたドキュメント検索・質問応答まで、すべてを一つのアプリケーションで完結させることができます。
 
