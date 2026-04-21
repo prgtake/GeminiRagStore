@@ -27,27 +27,56 @@ from google.genai import types
 import os
 import time
 import json
+import sys
 from dotenv import load_dotenv
 
-# .envファイルから環境変数を読み込む
-load_dotenv()
+# 実行ファイルのディレクトリを取得して絶対パスを作成（PyInstallerの--onefileに対応）
+if getattr(sys, 'frozen', False):
+    # .exe化されている場合：実行ファイル本体があるディレクトリ
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    # 通常のスクリプト実行の場合：このファイルがあるディレクトリ
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# 実行ファイルのディレクトリを取得して絶対パスを作成
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# .envファイルから環境変数を読み込む
+DOTENV_PATH = os.path.join(BASE_DIR, ".env")
+load_dotenv(DOTENV_PATH)
+
 CONFIG_FILE = os.path.join(BASE_DIR, "app_config.json")
 
 class GeminiClientManager:
-    def __init__(self):
+    def __init__(self, parent_window=None):
         self.config = self._load_config()
         # 保存されたモデル名があれば使用、なければデフォルト
         self.current_model = self.config.get("model", "gemini-3.1-flash-lite-preview")
-        
+        self.api_key = self.config.get("api_key")
+
+        # 設定ファイルにない場合、環境変数を確認
+        if not self.api_key:
+            self.api_key = os.environ.get("GEMINI_API_KEY")
+
+        # それでもない場合、ユーザーに入力を求める
+        if not self.api_key:
+            self.api_key = simpledialog.askstring(
+                "APIキー設定", 
+                "Gemini APIキーが見つかりません。\nAPIキーを入力してください:", 
+                parent=parent_window
+            )
+            if self.api_key:
+                self.api_key = self.api_key.strip()
+                self._save_config()
+
         # 初回起動時（ファイルがない場合）にデフォルト設定でファイルを作成しておく
         if not os.path.exists(CONFIG_FILE):
             self._save_config()
 
+        if not self.api_key:
+            self.client = None
+            return
+
         try:
-            self.client = genai.Client()
+            # Clientに明示的にAPIキーを渡す
+            self.client = genai.Client(api_key=self.api_key)
         except Exception as e:
             messagebox.showerror("APIエラー", f"Gemini 初期化エラー: {e}")
             self.client = None
@@ -65,6 +94,8 @@ class GeminiClientManager:
     def _save_config(self):
         """現在の設定をファイルに保存する"""
         self.config["model"] = self.current_model
+        if self.api_key:
+            self.config["api_key"] = self.api_key
         try:
             with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, indent=4, ensure_ascii=False)
@@ -162,7 +193,7 @@ class MainApp(tk.Tk):
         self.title("Gemini File Search Store 管理パネル")
         self.geometry("1100x750")
 
-        self.client_manager = GeminiClientManager()
+        self.client_manager = GeminiClientManager(self)
         if not self.client_manager.client:
             self.destroy()
             return
@@ -182,8 +213,8 @@ class MainApp(tk.Tk):
         info_frame = tk.Frame(self, bg="#f0f0f0", pady=5)
         info_frame.pack(fill='x')
         
-        # APIキーの伏せ字処理
-        api_key = os.environ.get("GEMINI_API_KEY", "N/A")
+        # APIキーの伏せ字処理（client_managerに保存されたキーを使用）
+        api_key = self.client_manager.api_key or "N/A"
         masked_key = f"{api_key[:4]}...{api_key[-4:]}" if len(api_key) > 10 else api_key
 
         tk.Label(
@@ -365,6 +396,7 @@ class MainApp(tk.Tk):
         sid, dname = self.get_selected_store()
         query = self.query_entry.get().strip()
         if not sid or not query: return
+        self.query_entry.delete(0, tk.END)
         self.log_message(f"--- '{dname}' へ質問: {query} ---")
         self.log_message(self.client_manager.query_store(sid, query))
 
